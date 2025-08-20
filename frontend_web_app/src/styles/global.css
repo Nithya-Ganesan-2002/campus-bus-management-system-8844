@@ -1,0 +1,79 @@
+/* Tailwind base layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App global tokens and theming (kept for ThemeToggle compatibility) */
+:root {
+  /* Light theme variables */
+  --bg-color: #ffffff;
+  --text-color: #111827;
+  --text-secondary: #4b5563;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --card-bg: rgba(255, 255, 255, 1);
+  --card-hover-bg: rgba(255, 255, 255, 0.55);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-hover-color: rgba(0, 0, 0, 0.15);
+}
+
+body.dark-theme {
+  /* Dark theme variables */
+  --bg-color: #111827;
+  --text-color: #f9fafb;
+  --text-secondary: #d1d5db;
+  --border-color: rgba(255, 255, 255, 0.2);
+  --card-bg: rgba(31, 41, 55, 0.9);
+  --card-hover-bg: rgba(31, 41, 55, 0.7);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-hover-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Base minimalistic style */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  @apply antialiased;
+}
+
+/* Utility components */
+.container-page {
+  @apply min-h-screen flex flex-col;
+}
+
+.header-app {
+  @apply sticky top-0 z-40 backdrop-blur bg-white/70 dark:bg-slate-900/60 border-b border-black/5 dark:border-white/10;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition-colors duration-200;
+}
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-secondary/40 shadow-soft;
+}
+.btn-secondary {
+  @apply bg-secondary text-white hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30;
+}
+.btn-accent {
+  @apply bg-accent text-white hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-secondary/30;
+}
+
+.card {
+  @apply bg-white dark:bg-slate-800 border border-black/5 dark:border-white/10 rounded-xl shadow-soft hover:shadow-softLg transition-shadow duration-300;
+}
+
+.section {
+  @apply py-8 md:py-12;
+}
+
+/* Simple animations */
+.anim-fade-in {
+  @apply animate-fade-in;
+}
+.anim-scale-in {
+  @apply animate-scale-in;
+}

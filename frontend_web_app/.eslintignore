@@ -1,0 +1,4 @@
+# Ignore Astro generated types and build outputs
+.astro/
+dist/
+node_modules/

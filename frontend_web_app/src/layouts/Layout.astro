@@ -1,5 +1,6 @@
 ---
 import ThemeToggle from '../components/ThemeToggle.astro';
+import "../styles/global.css";
 ---
 
 <!doctype html>
@@ -9,46 +10,29 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>College Bus Management</title>
 	</head>
-	<body>
-		<ThemeToggle />
-		<slot />
+	<body class="container-page transition-colors duration-300">
+		<header class="header-app">
+			<div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+				<a href="/" class="font-semibold text-primary hover:text-primary/90 transition-colors">College Bus</a>
+				<nav class="hidden md:flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+					<a href="/" class="hover:text-primary">Home</a>
+					<a href="#" class="hover:text-primary">Student</a>
+					<a href="#" class="hover:text-primary">Admin</a>
+				</nav>
+			</div>
+		</header>
+
+		<main class="flex-1 anim-fade-in">
+			<ThemeToggle />
+			<slot />
+		</main>
+
+		<footer class="border-t border-black/5 dark:border-white/10 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+			<div class="mx-auto max-w-7xl px-4">
+				© {new Date().getFullYear()} College Bus Management. All rights reserved.
+			</div>
+		</footer>
 	</body>
 </html>
-
-<style>
-	:root {
-		/* Light theme variables */
-		--bg-color: #ffffff;
-		--text-color: #111827;
-		--text-secondary: #4b5563;
-		--border-color: rgba(0, 0, 0, 0.1);
-		--card-bg: rgba(255, 255, 255, 1);
-		--card-hover-bg: rgba(255, 255, 255, 0.55);
-		--shadow-color: rgba(0, 0, 0, 0.1);
-		--shadow-hover-color: rgba(0, 0, 0, 0.15);
-	}
-
-	body.dark-theme {
-		/* Dark theme variables */
-		--bg-color: #111827;
-		--text-color: #f9fafb;
-		--text-secondary: #d1d5db;
-		--border-color: rgba(255, 255, 255, 0.2);
-		--card-bg: rgba(31, 41, 55, 0.9);
-		--card-hover-bg: rgba(31, 41, 55, 0.7);
-		--shadow-color: rgba(0, 0, 0, 0.3);
-		--shadow-hover-color: rgba(0, 0, 0, 0.4);
-	}
-
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-		background-color: var(--bg-color);
-		color: var(--text-color);
-		transition: background-color 0.3s ease, color 0.3s ease;
-	}
-</style>
