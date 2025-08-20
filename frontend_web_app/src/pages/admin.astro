@@ -1,8 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/ui/Card.astro';
-import Table from '../components/ui/Table.astro';
-import Badge from '../components/ui/Badge.astro';
+import BusForm from '../components/admin/BusForm.astro';
+import DriverAssignForm from '../components/admin/DriverAssignForm.astro';
+import ScheduleForm from '../components/admin/ScheduleForm.astro';
+import BusTable from '../components/admin/BusTable.astro';
+import RouteManager from '../components/admin/RouteManager.astro';
 ---
 
 <Layout>
@@ -20,59 +23,79 @@ import Badge from '../components/ui/Badge.astro';
         </div>
 
         <div id="admin-actions" class="flex flex-wrap gap-2">
-          <a class="btn btn-primary" href="#" id="add-bus">Add Bus</a>
-          <a class="btn btn-secondary" href="#" id="assign-driver">Assign Driver</a>
-          <a class="btn btn-accent" href="#" id="update-schedule">Update Schedule</a>
+          <button class="btn btn-primary" id="btn-add-bus">Add Bus</button>
+          <button class="btn btn-secondary" id="btn-assign-driver">Assign Driver</button>
+          <button class="btn btn-accent" id="btn-add-schedule">Add Schedule</button>
+          <button class="btn" id="btn-manage-routes">Manage Routes</button>
         </div>
       </div>
     </Card>
 
-    <Card title="Buses">
-      <div id="admin-table-wrapper">
-        <Table headers={["Bus", "Route", "Driver", "Occupancy", "Status"]}>
-          <tr>
-            <td class="px-4 py-3">Bus 12</td>
-            <td class="px-4 py-3">Main Campus Loop</td>
-            <td class="px-4 py-3">A. Kumar</td>
-            <td class="px-4 py-3">28/40</td>
-            <td class="px-4 py-3"><Badge color="secondary">Active</Badge></td>
-          </tr>
-          <tr>
-            <td class="px-4 py-3">Bus 7</td>
-            <td class="px-4 py-3">North Line</td>
-            <td class="px-4 py-3">S. Rao</td>
-            <td class="px-4 py-3">40/40</td>
-            <td class="px-4 py-3"><Badge>Full</Badge></td>
-          </tr>
-        </Table>
-      </div>
-    </Card>
+    <div id="admin-panels" class="space-y-6">
+      <!-- Dynamic panels mount area -->
+      <div id="panel-mount"></div>
+
+      <BusTable onAction="admin:bus:action" />
+    </div>
   </section>
 
   <script>
     import { getRole, subscribe } from "../lib/store/auth.ts";
 
+    function el(id){ return document.getElementById(id); }
+    function showPanel(html) {
+      const m = el('panel-mount');
+      if (m) m.innerHTML = html;
+    }
+
     function updateGate(role) {
-      const gate = document.getElementById('admin-gate');
-      const actions = document.getElementById('admin-actions');
-      const table = document.getElementById('admin-table-wrapper');
-      if (!gate || !actions || !table) return;
+      const gate = el('admin-gate');
+      const actions = el('admin-actions');
+      const panels = el('admin-panels');
+      if (!gate || !actions || !panels) return;
       const allowed = role === 'admin';
       gate.classList.toggle('hidden', allowed);
       actions.classList.toggle('hidden', !allowed);
-      table.classList.toggle('hidden', !allowed);
+      panels.classList.toggle('hidden', !allowed);
+      if (!allowed) showPanel('');
+    }
+
+    function mountBusForm(busId = "") {
+      showPanel(`<bus-form ${busId ? `bus-id="${busId}"` : ""} on-saved-event="admin:bus:saved"></bus-form>`);
+    }
+    function mountDriverAssign(busId = "") {
+      showPanel(`<driver-assign-form bus-id="${busId}" on-assigned-event="admin:driver:assigned"></driver-assign-form>`);
+    }
+    function mountScheduleForm(scheduleId = "") {
+      showPanel(`<schedule-form ${scheduleId ? `schedule-id="${scheduleId}"` : ""} on-saved-event="admin:schedule:saved"></schedule-form>`);
+    }
+    function mountRouteManager() {
+      showPanel(`<route-manager></route-manager>`);
     }
 
     function init() {
       updateGate(getRole());
       subscribe(updateGate);
-      document.getElementById('open-login')?.addEventListener('click', () => {
-        window.dispatchEvent(new CustomEvent('login:open'));
+
+      el('open-login')?.addEventListener('click', () => window.dispatchEvent(new CustomEvent('login:open')));
+
+      el('btn-add-bus')?.addEventListener('click', () => mountBusForm());
+      el('btn-assign-driver')?.addEventListener('click', () => mountDriverAssign(""));
+      el('btn-add-schedule')?.addEventListener('click', () => mountScheduleForm());
+      el('btn-manage-routes')?.addEventListener('click', () => mountRouteManager());
+
+      // Listen to table actions
+      window.addEventListener('admin:bus:action', (e) => {
+        const detail = (e as CustomEvent).detail || {};
+        if (detail?.type === 'edit' && detail?.busId) mountBusForm(detail.busId);
+        if (detail?.type === 'assign' && detail?.busId) mountDriverAssign(detail.busId);
       });
-      // Demo click handlers
-      document.getElementById('add-bus')?.addEventListener('click', (e) => { e.preventDefault(); alert('Add bus (demo)'); });
-      document.getElementById('assign-driver')?.addEventListener('click', (e) => { e.preventDefault(); alert('Assign driver (demo)'); });
-      document.getElementById('update-schedule')?.addEventListener('click', (e) => { e.preventDefault(); alert('Update schedule (demo)'); });
+
+      // After saves, clear panel
+      window.addEventListener('admin:bus:saved', () => showPanel(''));
+      window.addEventListener('admin:driver:assigned', () => showPanel(''));
+      window.addEventListener('admin:schedule:saved', () => showPanel(''));
+      window.addEventListener('admin:route:saved', () => showPanel(''));
     }
 
     if (document.readyState === 'loading') {

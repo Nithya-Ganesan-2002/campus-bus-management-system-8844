@@ -1,0 +1,99 @@
+---
+/**
+ * BusTable.astro
+ * PUBLIC_INTERFACE
+ * Displays a table of buses with route, driver, occupancy, status and actions.
+ * Props:
+ *  - onAction?: string (CustomEvent name to fire with details: { type, busId })
+ */
+import Table from "../ui/Table.astro";
+import Badge from "../ui/Badge.astro";
+import Card from "../ui/Card.astro";
+const { onAction = "admin:bus:action" } = Astro.props;
+---
+
+<Card title="Buses">
+  <div id="bus-table"></div>
+
+  <script>
+    import { getEnvelope, getBusOccupancy, deleteBus } from "../../lib/services";
+
+    const actionEvent = "{onAction}";
+
+    function render() {
+      const mount = document.getElementById('bus-table');
+      if (!mount) return;
+      const env = getEnvelope();
+
+      const headers = ["Bus", "Route", "Driver", "Occupancy", "Status", "Actions"];
+      const thead = headers.map(h => `<th class="text-left text-xs font-semibold text-slate-600 dark:text-slate-300 px-4 py-3">${h}</th>`).join('');
+
+      const rows = env.buses.map(b => {
+        const route = env.routes.find(r => r.id === b.routeId);
+        const driver = env.drivers.find(d => d.id === b.driverId);
+        const occ = getBusOccupancy(b.id);
+        const occupied = occ.capacity - occ.available;
+        const statusBadge = b.status === 'active' ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ring-1 bg-secondary/15 text-secondary ring-secondary/30">Active</span>` :
+          b.status === 'maintenance' ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ring-1 bg-accent/15 text-accent ring-accent/30">Maintenance</span>` :
+          `<span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full ring-1 bg-slate-200/50 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200 ring-slate-300/50">Inactive</span>`;
+        return `
+          <tr>
+            <td class="px-4 py-3">${b.code}</td>
+            <td class="px-4 py-3">${route ? route.name : '-'}</td>
+            <td class="px-4 py-3">${driver ? driver.fullName : '-'}</td>
+            <td class="px-4 py-3">${occupied}/${occ.capacity}</td>
+            <td class="px-4 py-3">${statusBadge}</td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <button class="btn !px-3 !py-1.5" data-edit="${b.id}">Edit</button>
+                <button class="btn btn-secondary !px-3 !py-1.5" data-assign="${b.id}">Assign Driver</button>
+                <button class="btn btn-accent !px-3 !py-1.5" data-delete="${b.id}">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      mount.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="min-w-full border border-black/5 dark:border-white/10 rounded-lg overflow-hidden">
+            <thead class="bg-slate-50 dark:bg-slate-800/60"><tr>${thead}</tr></thead>
+            <tbody class="[&_tr:nth-child(even)]:bg-slate-50/60 dark:[&_tr:nth-child(even)]:bg-slate-800/40">
+              ${rows || `<tr><td class="px-4 py-4 text-sm text-slate-500 dark:text-slate-400" colspan="6">No buses.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      mount.querySelectorAll('[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => window.dispatchEvent(new CustomEvent(actionEvent, { detail: { type: 'edit', busId: btn.getAttribute('data-edit') } })));
+      });
+      mount.querySelectorAll('[data-assign]').forEach(btn => {
+        btn.addEventListener('click', () => window.dispatchEvent(new CustomEvent(actionEvent, { detail: { type: 'assign', busId: btn.getAttribute('data-assign') } })));
+      });
+      mount.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-delete');
+          const ok = confirm('Delete this bus? This will remove related schedules and seats.');
+          if (!ok || !id) return;
+          deleteBus(id);
+          render();
+          window.dispatchEvent(new CustomEvent(actionEvent, { detail: { type: 'deleted', busId: id } }));
+        });
+      });
+    }
+
+    function init() {
+      render();
+      window.addEventListener('admin:bus:saved', render);
+      window.addEventListener('admin:driver:assigned', render);
+      window.addEventListener('admin:schedule:saved', render);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</Card>

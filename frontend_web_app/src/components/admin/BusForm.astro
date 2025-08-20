@@ -1,0 +1,129 @@
+---
+/**
+ * BusForm.astro
+ * PUBLIC_INTERFACE
+ * Admin form to create or edit a bus entity.
+ * Props:
+ *  - busId?: string (if provided, form works in edit mode)
+ *  - onSavedEvent?: string (CustomEvent name to dispatch after save; default 'admin:bus:saved')
+ */
+import FormField from "../ui/FormField.astro";
+import Card from "../ui/Card.astro";
+import type { ID } from "../../lib/types";
+
+interface Props {
+  busId?: ID;
+  onSavedEvent?: string;
+}
+const { busId = "", onSavedEvent = "admin:bus:saved" } = Astro.props as Props;
+---
+
+<Card title={busId ? "Edit Bus" : "Add New Bus"}>
+  <div class="grid gap-4 md:grid-cols-2">
+    <FormField label="Code" hint="Unique bus label (e.g., Bus 12)">
+      <input id="bus-code" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="Bus 12" />
+    </FormField>
+    <FormField label="Capacity" hint="Total seats (e.g., 40)">
+      <input id="bus-capacity" type="number" min="1" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="40" />
+    </FormField>
+    <FormField label="Status" hint="active, maintenance, or inactive">
+      <select id="bus-status" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+        <option value="active">active</option>
+        <option value="maintenance">maintenance</option>
+        <option value="inactive">inactive</option>
+      </select>
+    </FormField>
+    <FormField label="Route" hint="Assign a route now or later">
+      <select id="bus-route" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+        <option value="">-- None --</option>
+      </select>
+    </FormField>
+  </div>
+  <div class="mt-4 flex items-center gap-2">
+    <button id="bus-save" class="btn btn-primary">{busId ? "Save Changes" : "Create Bus"}</button>
+    {busId && <button id="bus-delete" class="btn btn-accent">Delete</button>}
+    <span id="bus-form-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
+  </div>
+
+  <script>
+    import type { ID, Route, Bus } from "../../lib/types";
+    import { getEnvelope, getById, createBus, updateBus, deleteBus } from "../../lib/services";
+
+    const formBusId = "{busId}";
+    const savedEvent = "{onSavedEvent}";
+
+    function el(id) { return document.getElementById(id); }
+
+    function loadRoutesSelect() {
+      const env = getEnvelope();
+      const sel = el('bus-route');
+      if (!sel) return;
+      // preserve selected
+      const current = (sel as HTMLSelectElement).value || "";
+      sel.innerHTML = `<option value="">-- None --</option>` + env.routes.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+      if (current) (sel as HTMLSelectElement).value = current;
+    }
+
+    function fillIfEdit() {
+      if (!formBusId) return;
+      const bus = getById('bus', formBusId) as Bus | undefined;
+      if (!bus) return;
+      (el('bus-code') as HTMLInputElement).value = bus.code;
+      (el('bus-capacity') as HTMLInputElement).value = String(bus.capacity);
+      (el('bus-status') as HTMLSelectElement).value = bus.status as string;
+      (el('bus-route') as HTMLSelectElement).value = bus.routeId || "";
+    }
+
+    function validate() {
+      const code = (el('bus-code') as HTMLInputElement).value.trim();
+      const capacityRaw = (el('bus-capacity') as HTMLInputElement).value;
+      const capacity = parseInt(capacityRaw, 10);
+      const status = (el('bus-status') as HTMLSelectElement).value as any;
+      const routeId = (el('bus-route') as HTMLSelectElement).value || null;
+      if (!code) return { ok: false, message: 'Code is required' };
+      if (!capacity || capacity <= 0) return { ok: false, message: 'Capacity must be a positive number' };
+      if (!status) return { ok: false, message: 'Status required' };
+      return { ok: true, data: { code, capacity, status, routeId } };
+    }
+
+    function setStatus(msg: string) {
+      const s = el('bus-form-status');
+      if (s) s.textContent = msg;
+    }
+
+    function onSave() {
+      const v = validate();
+      if (!v.ok) { setStatus(v.message); return; }
+      if (formBusId) {
+        updateBus(formBusId, { ...v.data });
+        setStatus('Saved.');
+      } else {
+        createBus({ ...v.data, driverId: null });
+        setStatus('Created.');
+      }
+      window.dispatchEvent(new CustomEvent(savedEvent));
+    }
+
+    function onDelete() {
+      if (!formBusId) return;
+      const ok = confirm('Delete this bus? This will remove related schedules and seats.');
+      if (!ok) return;
+      deleteBus(formBusId);
+      setStatus('Deleted.');
+      window.dispatchEvent(new CustomEvent(savedEvent));
+    }
+
+    function init() {
+      loadRoutesSelect();
+      fillIfEdit();
+      el('bus-save')?.addEventListener('click', onSave);
+      el('bus-delete')?.addEventListener('click', onDelete);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</Card>

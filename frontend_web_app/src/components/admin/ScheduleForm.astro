@@ -1,0 +1,132 @@
+---
+/**
+ * ScheduleForm.astro
+ * PUBLIC_INTERFACE
+ * Admin form to create or edit schedules.
+ * Props:
+ *  - scheduleId?: string
+ *  - onSavedEvent?: string (default 'admin:schedule:saved')
+ */
+import FormField from "../ui/FormField.astro";
+import Card from "../ui/Card.astro";
+import type { ID } from "../../lib/types";
+
+interface Props { scheduleId?: ID; onSavedEvent?: string }
+const { scheduleId = "", onSavedEvent = "admin:schedule:saved" } = Astro.props as Props;
+---
+
+<Card title={scheduleId ? "Edit Schedule" : "Add Schedule"}>
+  <div class="grid gap-4 md:grid-cols-3">
+    <FormField label="Bus">
+      <select id="sch-bus" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40"></select>
+    </FormField>
+    <FormField label="Route">
+      <select id="sch-route" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40"></select>
+    </FormField>
+    <FormField label="Service Date">
+      <input id="sch-date" type="date" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+    <FormField label="Start Time">
+      <input id="sch-start" type="time" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+    <FormField label="End Time">
+      <input id="sch-end" type="time" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+    <FormField label="Recurrence" hint="Optional">
+      <select id="sch-recur" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+        <option value="none">none</option>
+        <option value="daily">daily</option>
+        <option value="weekday">weekday</option>
+        <option value="weekend">weekend</option>
+      </select>
+    </FormField>
+  </div>
+  <div class="mt-4 flex items-center gap-2">
+    <button id="sch-save" class="btn btn-primary">{scheduleId ? "Save Changes" : "Create Schedule"}</button>
+    {scheduleId && <button id="sch-delete" class="btn btn-accent">Delete</button>}
+    <span id="sch-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
+  </div>
+
+  <script>
+    import type { ID, Schedule } from "../../lib/types";
+    import { getEnvelope, getById, createSchedule, updateSchedule, deleteSchedule } from "../../lib/services";
+
+    const formId = "{scheduleId}";
+    const savedEvent = "{onSavedEvent}";
+
+    function el(id) { return document.getElementById(id); }
+
+    function loadSelects() {
+      const env = getEnvelope();
+      const busSel = el('sch-bus') as HTMLSelectElement;
+      const routeSel = el('sch-route') as HTMLSelectElement;
+      if (!busSel || !routeSel) return;
+      busSel.innerHTML = env.buses.map(b => `<option value="${b.id}">${b.code}</option>`).join('');
+      routeSel.innerHTML = env.routes.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    }
+
+    function fillIfEdit() {
+      if (!formId) return;
+      const s = getById('schedule', formId) as Schedule | undefined;
+      if (!s) return;
+      (el('sch-bus') as HTMLSelectElement).value = s.busId;
+      (el('sch-route') as HTMLSelectElement).value = s.routeId;
+      (el('sch-date') as HTMLInputElement).value = s.serviceDate;
+      (el('sch-start') as HTMLInputElement).value = s.startTime;
+      (el('sch-end') as HTMLInputElement).value = s.endTime;
+      (el('sch-recur') as HTMLSelectElement).value = s.recurrence || "none";
+    }
+
+    function validate() {
+      const busId = (el('sch-bus') as HTMLSelectElement).value;
+      const routeId = (el('sch-route') as HTMLSelectElement).value;
+      const serviceDate = (el('sch-date') as HTMLInputElement).value;
+      const startTime = (el('sch-start') as HTMLInputElement).value;
+      const endTime = (el('sch-end') as HTMLInputElement).value;
+      const recurrence = (el('sch-recur') as HTMLSelectElement).value || 'none';
+      if (!busId || !routeId || !serviceDate || !startTime || !endTime) {
+        return { ok: false, message: 'All fields except recurrence are required' };
+      }
+      return { ok: true, data: { busId, routeId, serviceDate, startTime, endTime, recurrence } };
+    }
+
+    function setStatus(msg: string) {
+      const s = el('sch-status'); if (s) s.textContent = msg;
+    }
+
+    function onSave() {
+      const v = validate();
+      if (!v.ok) { setStatus(v.message); return; }
+      if (formId) {
+        updateSchedule(formId, v.data as any);
+        setStatus('Saved.');
+      } else {
+        createSchedule(v.data as any);
+        setStatus('Created.');
+      }
+      window.dispatchEvent(new CustomEvent(savedEvent));
+    }
+
+    function onDelete() {
+      if (!formId) return;
+      const ok = confirm('Delete this schedule? Bookings on this schedule will be removed and seats released.');
+      if (!ok) return;
+      deleteSchedule(formId);
+      setStatus('Deleted.');
+      window.dispatchEvent(new CustomEvent(savedEvent));
+    }
+
+    function init() {
+      loadSelects();
+      fillIfEdit();
+      el('sch-save')?.addEventListener('click', onSave);
+      el('sch-delete')?.addEventListener('click', onDelete);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</Card>

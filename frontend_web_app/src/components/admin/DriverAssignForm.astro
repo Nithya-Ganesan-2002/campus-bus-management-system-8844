@@ -1,0 +1,83 @@
+---
+/**
+ * DriverAssignForm.astro
+ * PUBLIC_INTERFACE
+ * Admin form to assign a driver to a selected bus.
+ * Props:
+ *  - busId: string
+ *  - onAssignedEvent?: string (default 'admin:driver:assigned')
+ */
+import FormField from "../ui/FormField.astro";
+import Card from "../ui/Card.astro";
+import type { ID } from "../../lib/types";
+
+interface Props { busId: ID; onAssignedEvent?: string }
+const { busId, onAssignedEvent = "admin:driver:assigned" } = Astro.props as Props;
+---
+
+<Card title="Assign Driver">
+  <div class="grid gap-4 md:grid-cols-2">
+    <FormField label="Bus">
+      <select id="drv-bus" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+      </select>
+    </FormField>
+    <FormField label="Driver" hint="Select driver or choose none to unassign">
+      <select id="drv-driver" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+        <option value="">-- None --</option>
+      </select>
+    </FormField>
+  </div>
+  <div class="mt-4 flex items-center gap-2">
+    <button id="drv-save" class="btn btn-primary">Save</button>
+    <span id="drv-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
+  </div>
+
+  <script>
+    import type { ID, Bus, Driver } from "../../lib/types";
+    import { getEnvelope, getById, assignDriverToBus } from "../../lib/services";
+
+    const initialBusId = "{busId}";
+    const assignedEvent = "{onAssignedEvent}";
+
+    function el(id) { return document.getElementById(id); }
+
+    function loadOptions() {
+      const env = getEnvelope();
+      const selBus = el('drv-bus') as HTMLSelectElement;
+      const selDrv = el('drv-driver') as HTMLSelectElement;
+      if (!selBus || !selDrv) return;
+
+      selBus.innerHTML = env.buses.map(b => `<option value="${b.id}">${b.code}</option>`).join('');
+      selBus.value = initialBusId || env.buses[0]?.id || "";
+
+      selDrv.innerHTML = `<option value="">-- None --</option>` + env.drivers.map(d => `<option value="${d.id}">${d.fullName}</option>`).join('');
+
+      // preselect current driver on selected bus
+      const bus = getById('bus', selBus.value) as Bus | undefined;
+      if (bus?.driverId) selDrv.value = bus.driverId;
+    }
+
+    function save() {
+      const selBus = el('drv-bus') as HTMLSelectElement;
+      const selDrv = el('drv-driver') as HTMLSelectElement;
+      const busId = selBus.value;
+      const driverId = selDrv.value || null;
+      assignDriverToBus(busId, driverId);
+      const st = el('drv-status');
+      if (st) st.textContent = 'Saved.';
+      window.dispatchEvent(new CustomEvent(assignedEvent));
+    }
+
+    function init() {
+      loadOptions();
+      el('drv-save')?.addEventListener('click', save);
+      (el('drv-bus') as HTMLSelectElement)?.addEventListener('change', loadOptions);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</Card>

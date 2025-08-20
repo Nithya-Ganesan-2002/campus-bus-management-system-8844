@@ -1,0 +1,134 @@
+---
+/**
+ * RouteManager.astro
+ * PUBLIC_INTERFACE
+ * Simple manager to add/edit/delete routes.
+ */
+import FormField from "../ui/FormField.astro";
+import Card from "../ui/Card.astro";
+---
+
+<Card title="Route Manager">
+  <div class="grid gap-4 md:grid-cols-3">
+    <FormField label="Route" hint="Select to edit or delete">
+      <select id="rm-route" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40"></select>
+    </FormField>
+    <FormField label="Name">
+      <input id="rm-name" placeholder="Route name" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+    <FormField label="Status">
+      <select id="rm-status" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+        <option value="active">active</option>
+        <option value="inactive">inactive</option>
+      </select>
+    </FormField>
+    <FormField label="Stops (comma-separated)" hint="e.g., Gate, Library, Dorms">
+      <input id="rm-stops" placeholder="Comma separated stops" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+    <FormField label="First Bus Time">
+      <input id="rm-first" type="time" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+    <FormField label="Last Bus Time">
+      <input id="rm-last" type="time" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+    </FormField>
+  </div>
+  <div class="mt-4 flex items-center gap-2">
+    <button id="rm-create" class="btn btn-primary">Create New</button>
+    <button id="rm-save" class="btn btn-secondary">Save Selected</button>
+    <button id="rm-delete" class="btn btn-accent">Delete Selected</button>
+    <span id="rm-status-msg" class="text-xs text-slate-500 dark:text-slate-400"></span>
+  </div>
+
+  <script>
+    import { getEnvelope, getById, createRoute, updateRoute, deleteRoute } from "../../lib/services";
+    import type { Route } from "../../lib/types";
+    function el(id){ return document.getElementById(id); }
+
+    function loadRoutes() {
+      const env = getEnvelope();
+      const sel = el('rm-route') as HTMLSelectElement;
+      if (!sel) return;
+      sel.innerHTML = `<option value="">-- New --</option>` + env.routes.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    }
+
+    function fillFromSelection() {
+      const id = (el('rm-route') as HTMLSelectElement).value;
+      const name = el('rm-name') as HTMLInputElement;
+      const status = el('rm-status') as HTMLSelectElement;
+      const stops = el('rm-stops') as HTMLInputElement;
+      const first = el('rm-first') as HTMLInputElement;
+      const last = el('rm-last') as HTMLInputElement;
+
+      if (!id) {
+        name.value = ""; status.value = "active"; stops.value = ""; first.value = ""; last.value = "";
+        return;
+      }
+      const r = getById('route', id) as Route | undefined;
+      if (!r) return;
+      name.value = r.name;
+      status.value = r.status;
+      stops.value = r.stops.join(', ');
+      first.value = r.firstBusTime;
+      last.value = r.lastBusTime;
+    }
+
+    function readFields() {
+      const name = (el('rm-name') as HTMLInputElement).value.trim();
+      const status = (el('rm-status') as HTMLSelectElement).value as any;
+      const stops = (el('rm-stops') as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean);
+      const first = (el('rm-first') as HTMLInputElement).value;
+      const last = (el('rm-last') as HTMLInputElement).value;
+      if (!name || !first || !last) return { ok: false, message: 'Name, first and last bus times are required' };
+      return { ok: true, data: { name, status, stops, firstBusTime: first, lastBusTime: last } };
+    }
+
+    function setStatus(msg){ const s=el('rm-status-msg'); if (s) s.textContent = msg; }
+
+    function onCreate() {
+      const v = readFields();
+      if (!v.ok) return setStatus(v.message);
+      createRoute({ ...v.data, description: '' });
+      loadRoutes();
+      setStatus('Created.');
+      window.dispatchEvent(new CustomEvent('admin:route:saved'));
+    }
+
+    function onSave() {
+      const id = (el('rm-route') as HTMLSelectElement).value;
+      if (!id) return setStatus('Select a route to save or click Create New.');
+      const v = readFields();
+      if (!v.ok) return setStatus(v.message);
+      updateRoute(id, v.data as any);
+      loadRoutes();
+      setStatus('Saved.');
+      window.dispatchEvent(new CustomEvent('admin:route:saved'));
+    }
+
+    function onDelete() {
+      const id = (el('rm-route') as HTMLSelectElement).value;
+      if (!id) return setStatus('Select a route to delete.');
+      const ok = confirm('Delete this route? This will detach buses and remove schedules/bookings for this route.');
+      if (!ok) return;
+      deleteRoute(id);
+      loadRoutes();
+      fillFromSelection();
+      setStatus('Deleted.');
+      window.dispatchEvent(new CustomEvent('admin:route:saved'));
+    }
+
+    function init() {
+      loadRoutes();
+      fillFromSelection();
+      (el('rm-route') as HTMLSelectElement)?.addEventListener('change', fillFromSelection);
+      el('rm-create')?.addEventListener('click', onCreate);
+      el('rm-save')?.addEventListener('click', onSave);
+      el('rm-delete')?.addEventListener('click', onDelete);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</Card>
