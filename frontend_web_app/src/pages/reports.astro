@@ -1,19 +1,43 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/ui/Card.astro';
+import BarChart from '../components/charts/BarChart.astro';
+import LineChart from '../components/charts/LineChart.astro';
+import PieChart from '../components/charts/PieChart.astro';
 ---
 
 <Layout>
-  <section class="section grid gap-6 md:grid-cols-2">
-    <Card title="Daily Occupancy">
-      <div class="h-48 flex items-center justify-center text-slate-500 dark:text-slate-400">
-        Chart placeholder
-      </div>
-    </Card>
-    <Card title="Route Performance">
-      <div class="h-48 flex items-center justify-center text-slate-500 dark:text-slate-400">
-        Chart placeholder
-      </div>
-    </Card>
+  <section class="section">
+    <div class="grid gap-6 lg:grid-cols-3">
+      <Card title="Daily Occupancy Trend">
+        <LineChart client:idle title="Daily Occupancy Trend" />
+      </Card>
+
+      <Card title="Monthly Occupancy">
+        <BarChart client:idle title="Monthly Occupancy" />
+      </Card>
+
+      <Card title="Seat Usage Breakdown">
+        <PieChart client:idle title="Seat Usage Breakdown" />
+      </Card>
+    </div>
+
+    <div class="mt-6 grid gap-6 md:grid-cols-2">
+      <Card title="Bookings (Last 14 Days)">
+        <LineChart client:idle
+          title="Bookings (Last 14 Days)"
+          color="#1e40af"
+          labels={Array.from({ length: 14 }).map((_, i) => `D-${14 - i}`)}
+          data={[5,6,7,12,10,9,11,15,12,16,14,18,17,19]} />
+      </Card>
+
+      <Card title="Avg. Route Occupancy (%)">
+        <BarChart client:idle
+          title="Avg. Route Occupancy (%)"
+          color="#0ea5e9"
+          labels={["Main Loop","North Line","South Express"]}
+          data={[82, 75, 48]} />
+      </Card>
+    </div>
   </section>
 </Layout>

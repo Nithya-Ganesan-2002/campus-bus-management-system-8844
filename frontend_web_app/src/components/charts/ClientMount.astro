@@ -1,0 +1,36 @@
+---
+/**
+ * ClientMount.astro
+ * PUBLIC_INTERFACE
+ * Generic client-only mount component to run an init function from a module.
+ * Props:
+ *  - module: string (path to JS module)
+ *  - init: string (named export function to call)
+ */
+const { module, init } = Astro.props as { module: string; init: string };
+---
+<div data-module={module} data-init={init}></div>
+
+<script>
+  async function mountAll() {
+    document
+      .querySelectorAll('div[data-module][data-init]')
+      .forEach(async (node) => {
+        const modPath = node.getAttribute('data-module');
+        const initName = node.getAttribute('data-init') || 'init';
+        if (!modPath) return;
+        try {
+          const mod = await import(/* @vite-ignore */ modPath);
+          const fn = mod?.[initName];
+          if (typeof fn === 'function') fn();
+        } catch (e) {
+          console.error('ClientMount: failed to load', modPath, e);
+        }
+      });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountAll);
+  } else {
+    mountAll();
+  }
+</script>

@@ -1,0 +1,43 @@
+---
+/**
+ * BarChart.astro
+ * PUBLIC_INTERFACE
+ * A responsive Chart.js Bar chart island showing sample monthly occupancy.
+ * Props:
+ *  - title?: string
+ *  - labels?: string[]
+ *  - data?: number[]
+ *  - color?: string (hex or css color)
+ */
+const {
+  title = "Monthly Occupancy",
+  labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  data = [65, 72, 68, 80, 74, 86, 90, 88, 70, 75, 78, 82],
+  color = "#1e40af"
+} = Astro.props as {
+  title?: string;
+  labels?: string[];
+  data?: number[];
+  color?: string;
+};
+---
+---
+import ClientMount from "./ClientMount.astro";
+---
+<section class="w-full">
+  {title && <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{title}</h4>}
+  <div class="relative w-full">
+    <canvas class="cbms-bar-chart" data-labels={JSON.stringify(labels)} data-values={JSON.stringify(data)} data-color={color}></canvas>
+  </div>
+  <ClientMount client:load module="/src/components/charts/barChartClient.js" init="initBarCharts" />
+
+  <style>
+    :global(canvas.cbms-bar-chart) {
+      width: 100% !important;
+      height: 260px !important;
+    }
+    @media (min-width: 1024px) {
+      :global(canvas.cbms-bar-chart) { height: 300px !important; }
+    }
+  </style>
+</section>

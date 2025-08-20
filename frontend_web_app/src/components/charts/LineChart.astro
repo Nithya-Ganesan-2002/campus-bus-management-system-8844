@@ -1,0 +1,43 @@
+---
+/**
+ * LineChart.astro
+ * PUBLIC_INTERFACE
+ * A responsive Chart.js Line chart island showing sample daily bookings trend.
+ * Props:
+ *  - title?: string
+ *  - labels?: string[]
+ *  - data?: number[]
+ *  - color?: string
+ */
+const {
+  title = "Bookings (Last 14 Days)",
+  labels = Array.from({ length: 14 }).map((_, i) => `D-${14 - i}`),
+  data = [8, 10, 9, 11, 7, 13, 12, 15, 11, 14, 12, 16, 18, 17],
+  color = "#0ea5e9"
+} = Astro.props as {
+  title?: string;
+  labels?: string[];
+  data?: number[];
+  color?: string;
+};
+---
+---
+import ClientMount from "./ClientMount.astro";
+---
+<section class="w-full">
+  {title && <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{title}</h4>}
+  <div class="relative w-full">
+    <canvas class="cbms-line-chart" data-labels={JSON.stringify(labels)} data-values={JSON.stringify(data)} data-color={color}></canvas>
+  </div>
+  <ClientMount client:load module="/src/components/charts/lineChartClient.js" init="initLineCharts" />
+
+  <style>
+    :global(canvas.cbms-line-chart) {
+      width: 100% !important;
+      height: 260px !important;
+    }
+    @media (min-width: 1024px) {
+      :global(canvas.cbms-line-chart) { height: 300px !important; }
+    }
+  </style>
+</section>

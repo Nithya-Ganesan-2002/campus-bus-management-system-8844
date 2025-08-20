@@ -1,0 +1,46 @@
+---
+/**
+ * PieChart.astro
+ * PUBLIC_INTERFACE
+ * A responsive Chart.js Pie chart island showing sample seat usage breakdown.
+ * Props:
+ *  - title?: string
+ *  - labels?: string[]
+ *  - data?: number[]
+ *  - colors?: string[]
+ */
+const {
+  title = "Seat Usage Breakdown",
+  labels = ["Available", "Reserved", "Blocked"],
+  data = [56, 28, 6],
+  colors = ["#10b981", "#f59e0b", "#ef4444"]
+} = Astro.props as {
+  title?: string;
+  labels?: string[];
+  data?: number[];
+  colors?: string[];
+};
+---
+---
+import ClientMount from "./ClientMount.astro";
+---
+<section class="w-full">
+  {title && <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{title}</h4>}
+  <div class="relative w-full">
+    <canvas class="cbms-pie-chart"
+      data-labels={JSON.stringify(labels)}
+      data-values={JSON.stringify(data)}
+      data-colors={JSON.stringify(colors)}></canvas>
+  </div>
+  <ClientMount client:load module="/src/components/charts/pieChartClient.js" init="initPieCharts" />
+
+  <style>
+    :global(canvas.cbms-pie-chart) {
+      width: 100% !important;
+      height: 240px !important;
+    }
+    @media (min-width: 1024px) {
+      :global(canvas.cbms-pie-chart) { height: 280px !important; }
+    }
+  </style>
+</section>
