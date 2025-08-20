@@ -26,12 +26,14 @@ Global styles live in `src/styles/global.css` and are included in `src/layouts/L
 
 Run from the project root:
 
-| Command         | Action                                    |
-| --------------- | ----------------------------------------- |
-| `npm install`   | Install dependencies                      |
-| `npm run dev`   | Start dev server (Astro + Tailwind)       |
-| `npm run build` | Build production                          |
-| `npm run preview` | Preview the production build            |
+| Command           | Action                                        |
+| ----------------- | --------------------------------------------- |
+| `npm install`     | Install dependencies                          |
+| `npm run dev`     | Start dev server (Astro + Tailwind)           |
+| `npm run build`   | Build production                              |
+| `npm run preview` | Preview the production build                  |
+| `npm run lint`    | Run ESLint across the project                 |
+| `npm run check`   | Run Astro config/type checks (non-interactive)|
 
 Tailwind scans files from `src/**/*` via `tailwind.config.js`.
 

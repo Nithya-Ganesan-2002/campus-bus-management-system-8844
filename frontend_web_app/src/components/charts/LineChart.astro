@@ -9,8 +9,6 @@
  *  - data?: number[]
  *  - color?: string
  */
-import ClientMount from "./ClientMount.astro";
-
 const {
   title = "Bookings (Last 14 Days)",
   labels = Array.from({ length: 14 }).map((_, i) => `D-${14 - i}`),
@@ -28,7 +26,10 @@ const {
   <div class="relative w-full">
     <canvas class="cbms-line-chart" data-labels={JSON.stringify(labels)} data-values={JSON.stringify(data)} data-color={color}></canvas>
   </div>
-  <ClientMount client:load module="/src/components/charts/lineChartClient.js" init="initLineCharts" />
+  <script client:load>
+    import { initLineCharts } from '/src/components/charts/lineChartClient.js';
+    initLineCharts();
+  </script>
 
   <style>
     :global(canvas.cbms-line-chart) {

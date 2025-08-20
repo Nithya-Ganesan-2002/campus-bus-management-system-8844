@@ -9,7 +9,7 @@
  *  - data?: number[]
  *  - color?: string (hex or css color)
  */
-import ClientMount from "./ClientMount.astro";
+
 
 const {
   title = "Monthly Occupancy",
@@ -28,7 +28,10 @@ const {
   <div class="relative w-full">
     <canvas class="cbms-bar-chart" data-labels={JSON.stringify(labels)} data-values={JSON.stringify(data)} data-color={color}></canvas>
   </div>
-  <ClientMount client:load module="/src/components/charts/barChartClient.js" init="initBarCharts" />
+  <script client:load>
+    import { initBarCharts } from '/src/components/charts/barChartClient.js';
+    initBarCharts();
+  </script>
 
   <style>
     :global(canvas.cbms-bar-chart) {

@@ -9,8 +9,6 @@
  *  - data?: number[]
  *  - colors?: string[]
  */
-import ClientMount from "./ClientMount.astro";
-
 const {
   title = "Seat Usage Breakdown",
   labels = ["Available", "Reserved", "Blocked"],
@@ -31,7 +29,10 @@ const {
       data-values={JSON.stringify(data)}
       data-colors={JSON.stringify(colors)}></canvas>
   </div>
-  <ClientMount client:load module="/src/components/charts/pieChartClient.js" init="initPieCharts" />
+  <script client:load>
+    import { initPieCharts } from '/src/components/charts/pieChartClient.js';
+    initPieCharts();
+  </script>
 
   <style>
     :global(canvas.cbms-pie-chart) {
