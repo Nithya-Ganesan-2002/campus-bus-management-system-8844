@@ -1,31 +1,28 @@
 ---
+/**
+ * FullWidth.astro - Optional layout without sidebar.
+ * PUBLIC_INTERFACE: Use for pages that need all width.
+ */
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Header from '../components/ui/Header.astro';
-import Sidebar from '../components/ui/Sidebar.astro';
 import Footer from '../components/ui/Footer.astro';
 import "../styles/global.css";
 ---
-
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
     <title>College Bus Management</title>
   </head>
   <body class="container-page transition-colors duration-300">
     <Header title="College Bus" />
-    <div class="flex flex-1">
-      <Sidebar />
-      <main class="flex-1 anim-fade-in">
-        <ThemeToggle />
-        <div class="mx-auto max-w-7xl px-4 py-6">
-          <slot />
-        </div>
-      </main>
-    </div>
+    <main class="flex-1 anim-fade-in">
+      <ThemeToggle />
+      <div class="mx-auto max-w-7xl px-4 py-6">
+        <slot />
+      </div>
+    </main>
     <Footer />
   </body>
 </html>

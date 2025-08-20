@@ -1,0 +1,50 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/ui/Card.astro';
+import Table from '../components/ui/Table.astro';
+import FormField from '../components/ui/FormField.astro';
+import Badge from '../components/ui/Badge.astro';
+---
+
+<Layout>
+  <section class="section space-y-6">
+    <Card title="Student Portal">
+      <p class="mb-4">View routes and register for a bus pass.</p>
+      <form class="grid gap-4 md:grid-cols-3">
+        <FormField label="Student ID" hint="Enter your college ID">
+          <input class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="e.g., STU12345" />
+        </FormField>
+        <FormField label="Preferred Route">
+          <select class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+            <option>Main Campus Loop</option>
+            <option>North Line</option>
+            <option>South Express</option>
+          </select>
+        </FormField>
+        <FormField label="Travel Date">
+          <input type="date" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+        </FormField>
+        <div class="md:col-span-3">
+          <button class="btn btn-primary">Register Pass</button>
+        </div>
+      </form>
+    </Card>
+
+    <Card title="Available Routes">
+      <Table headers={["Route", "Timing", "Seats", "Status"]}>
+        <tr>
+          <td class="px-4 py-3">Main Campus Loop</td>
+          <td class="px-4 py-3">08:00 - 18:00</td>
+          <td class="px-4 py-3">12/40</td>
+          <td class="px-4 py-3"><Badge color="accent">Open</Badge></td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3">North Line</td>
+          <td class="px-4 py-3">07:30 - 17:30</td>
+          <td class="px-4 py-3">40/40</td>
+          <td class="px-4 py-3"><Badge>Full</Badge></td>
+        </tr>
+      </Table>
+    </Card>
+  </section>
+</Layout>

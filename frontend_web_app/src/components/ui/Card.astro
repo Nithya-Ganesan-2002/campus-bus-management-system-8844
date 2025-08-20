@@ -1,0 +1,19 @@
+---
+/**
+ * Card.astro - Reusable card container.
+ * PUBLIC_INTERFACE
+ * Props:
+ *  - title?: string
+ *  - actions?: any (slot)
+ */
+const { title } = Astro.props;
+---
+<section class="card p-5">
+  {title && <header class="mb-3 flex items-center justify-between">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-white">{title}</h3>
+    <slot name="actions" />
+  </header>}
+  <div class="text-sm text-slate-700 dark:text-slate-200">
+    <slot />
+  </div>
+</section>

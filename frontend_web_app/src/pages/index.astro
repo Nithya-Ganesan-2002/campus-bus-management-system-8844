@@ -1,29 +1,31 @@
 ---
 import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
+import Card from '../components/ui/Card.astro';
+import Badge from '../components/ui/Badge.astro';
 ---
 
 <Layout>
   <section class="section">
-    <div class="mx-auto max-w-7xl px-4">
-      <div class="grid gap-6 md:grid-cols-2 items-stretch">
-        <div class="card p-6 anim-scale-in">
-          <h1 class="text-2xl md:text-3xl font-semibold text-slate-800 dark:text-white mb-2">
-            Welcome to College Bus Management
-          </h1>
-          <p class="text-slate-600 dark:text-slate-300">
-            Minimalistic, responsive UI built with Astro and Tailwind. Primary, secondary and accent colors are available as utilities.
-          </p>
-          <div class="mt-4 flex flex-wrap gap-3">
-            <a class="btn btn-primary" href="#routes">View Routes</a>
-            <a class="btn btn-secondary" href="#student">Student Portal</a>
-            <a class="btn btn-accent" href="#admin">Admin Portal</a>
-          </div>
+    <div class="grid gap-6 md:grid-cols-2 items-stretch">
+      <Card title="Welcome to College Bus Management">
+        <p class="text-slate-600 dark:text-slate-300">
+          Minimalistic, responsive UI built with Astro and Tailwind. Primary, secondary and accent colors are available as utilities.
+        </p>
+        <div class="mt-4 flex flex-wrap gap-3">
+          <a class="btn btn-primary" href="/routes">View Routes</a>
+          <a class="btn btn-secondary" href="/student">Student Portal</a>
+          <a class="btn btn-accent" href="/admin">Admin Portal</a>
         </div>
-        <div class="card p-0 overflow-hidden anim-scale-in">
-          <Welcome />
+        <div class="mt-4 flex items-center gap-2">
+          <Badge color="primary">Live</Badge>
+          <Badge color="secondary">v0.1</Badge>
+          <Badge>Astro</Badge>
         </div>
-      </div>
+      </Card>
+      <section class="card p-0 overflow-hidden anim-scale-in">
+        <Welcome />
+      </section>
     </div>
   </section>
 </Layout>

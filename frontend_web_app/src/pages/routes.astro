@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Card from '../components/ui/Card.astro';
+import Table from '../components/ui/Table.astro';
+---
+
+<Layout>
+  <section class="section space-y-6">
+    <Card title="Bus Routes">
+      <p>Explore all available routes and timings.</p>
+    </Card>
+    <Card>
+      <Table headers={["Route", "Stops", "First Bus", "Last Bus"]}>
+        <tr>
+          <td class="px-4 py-3">Main Campus Loop</td>
+          <td class="px-4 py-3">Gate A, Library, Lab Complex, Dorms</td>
+          <td class="px-4 py-3">07:30</td>
+          <td class="px-4 py-3">18:30</td>
+        </tr>
+        <tr>
+          <td class="px-4 py-3">South Express</td>
+          <td class="px-4 py-3">South Gate, Sports Complex</td>
+          <td class="px-4 py-3">07:00</td>
+          <td class="px-4 py-3">19:00</td>
+        </tr>
+      </Table>
+    </Card>
+  </section>
+</Layout>
