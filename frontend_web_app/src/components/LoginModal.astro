@@ -1,0 +1,110 @@
+---
+/**
+ * LoginModal.astro - Modal to select Student/Admin role for mock authentication.
+ * PUBLIC_INTERFACE
+ * Props:
+ *  - open?: boolean (default false). If undefined, modal manages its own visibility when no role.
+ *  - onCloseBehavior?: 'hide' | 'noop' (default 'hide')
+ */
+import Modal from './ui/Modal.astro';
+const { open = undefined, onCloseBehavior = 'hide' } = Astro.props as {
+  open?: boolean;
+  onCloseBehavior?: 'hide' | 'noop';
+};
+---
+<div>
+  <script>
+    import { getRole, loginAs, logout, subscribe } from "../lib/store/auth.ts";
+
+    // Local UI state
+    let isOpen = false;
+
+    // Respect controlled `open` prop if provided, else open if no role
+    const controlled = typeof Astro.props?.open === 'boolean';
+
+    function syncInitial() {
+      const role = getRole();
+      if (controlled) {
+        isOpen = Astro.props.open;
+      } else {
+        isOpen = !role; // open when not logged in
+      }
+      render();
+    }
+
+    function handleLogin(role) {
+      loginAs(role);
+      isOpen = false;
+      render();
+    }
+
+    function handleLogout() {
+      logout();
+      isOpen = true;
+      render();
+    }
+
+    function closeModal() {
+      if (Astro.props?.onCloseBehavior === 'noop') return;
+      isOpen = false;
+      render();
+    }
+
+    function render() {
+      const root = document.getElementById('login-modal-root');
+      if (!root) return;
+
+      const role = getRole();
+      const show = controlled ? Astro.props.open : isOpen;
+
+      root.innerHTML = `
+        ${show ? `
+          <div class="fixed inset-0 z-50 flex items-center justify-center">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+            <div class="relative z-10 card w-[90%] max-w-lg p-5">
+              <h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">Sign in</h3>
+              <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                Choose a role to continue. This is mock authentication for demo.
+              </p>
+              <div class="flex gap-3">
+                <button class="btn btn-primary" id="login-student">Continue as Student</button>
+                <button class="btn btn-secondary" id="login-admin">Continue as Admin</button>
+              </div>
+              <div class="mt-4 flex justify-between">
+                <span class="text-xs text-slate-500 dark:text-slate-400">${role ? `Current: ${role}` : ''}</span>
+                <div class="flex gap-2">
+                  ${role ? `<button class="btn btn-accent" id="logout">Logout</button>` : ''}
+                  <button class="btn" id="close">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ``}
+      `;
+
+      if (show) {
+        const s = document.getElementById('login-student');
+        const a = document.getElementById('login-admin');
+        const c = document.getElementById('close');
+        const lo = document.getElementById('logout');
+        s?.addEventListener('click', () => handleLogin('student'));
+        a?.addEventListener('click', () => handleLogin('admin'));
+        c?.addEventListener('click', closeModal);
+        lo?.addEventListener('click', handleLogout);
+      }
+    }
+
+    // Initialize
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        syncInitial();
+        subscribe(() => render());
+      });
+    } else {
+      syncInitial();
+      subscribe(() => render());
+    }
+  </script>
+
+  <div id="login-modal-root"></div>
+</div>

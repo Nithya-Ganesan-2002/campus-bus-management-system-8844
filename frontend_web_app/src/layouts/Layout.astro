@@ -3,6 +3,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 import Header from '../components/ui/Header.astro';
 import Sidebar from '../components/ui/Sidebar.astro';
 import Footer from '../components/ui/Footer.astro';
+import LoginModal from '../components/LoginModal.astro';
 import "../styles/global.css";
 ---
 
@@ -26,6 +27,15 @@ import "../styles/global.css";
         </div>
       </main>
     </div>
+    <LoginModal />
+    <script>
+      // Allow header "Login" button to open the modal.
+      window.addEventListener('login:open', () => {
+        // Re-rendering LoginModal will auto-open when not logged in.
+        // Trigger auth change so modal refreshes its open state.
+        window.dispatchEvent(new CustomEvent('auth:change', { detail: { role: null } }));
+      });
+    </script>
     <Footer />
   </body>
 </html>

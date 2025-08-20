@@ -14,6 +14,59 @@ const { title = "College Bus" } = Astro.props;
       <a href="/admin" class="hover:text-primary">Admin</a>
       <a href="/routes" class="hover:text-primary">Bus Routes</a>
       <a href="/reports" class="hover:text-primary">Reports</a>
+      <span class="mx-2 h-5 w-px bg-black/10 dark:bg-white/10"></span>
+      <span id="role-pill" class="hidden items-center gap-2 rounded-full px-2 py-1 text-xs ring-1 ring-black/10 dark:ring-white/10">
+        <span id="role-emoji">👤</span>
+        <span id="role-text">Guest</span>
+      </span>
+      <button id="login-btn" class="btn btn-secondary !px-3 !py-1.5">Login</button>
+      <button id="logout-btn" class="btn !px-3 !py-1.5 hidden">Logout</button>
     </nav>
   </div>
+  <script>
+    import { getRole, loginAs, logout, subscribe } from "../../lib/store/auth.ts";
+
+    function updateHeader(role) {
+      const pill = document.getElementById('role-pill');
+      const text = document.getElementById('role-text');
+      const emoji = document.getElementById('role-emoji');
+      const loginBtn = document.getElementById('login-btn');
+      const logoutBtn = document.getElementById('logout-btn');
+
+      if (!pill || !text || !emoji || !loginBtn || !logoutBtn) return;
+
+      if (role) {
+        pill.classList.remove('hidden');
+        text.textContent = role === 'student' ? 'Student' : 'Admin';
+        emoji.textContent = role === 'student' ? '🎓' : '🛠️';
+        loginBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
+      } else {
+        pill.classList.remove('hidden');
+        text.textContent = 'Guest';
+        emoji.textContent = '👤';
+        loginBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
+      }
+    }
+
+    function openLoginModal() {
+      // Emit an event so a global LoginModal instance can open if present
+      window.dispatchEvent(new CustomEvent('login:open'));
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        updateHeader(getRole());
+        subscribe(updateHeader);
+        document.getElementById('login-btn')?.addEventListener('click', openLoginModal);
+        document.getElementById('logout-btn')?.addEventListener('click', () => logout());
+      });
+    } else {
+      updateHeader(getRole());
+      subscribe(updateHeader);
+      document.getElementById('login-btn')?.addEventListener('click', openLoginModal);
+      document.getElementById('logout-btn')?.addEventListener('click', () => logout());
+    }
+  </script>
 </header>

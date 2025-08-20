@@ -16,12 +16,29 @@ import Badge from '../components/ui/Badge.astro';
           <a class="btn btn-primary" href="/routes">View Routes</a>
           <a class="btn btn-secondary" href="/student">Student Portal</a>
           <a class="btn btn-accent" href="/admin">Admin Portal</a>
+          <button id="home-login" class="btn">Login</button>
         </div>
         <div class="mt-4 flex items-center gap-2">
           <Badge color="primary">Live</Badge>
           <Badge color="secondary">v0.1</Badge>
           <Badge>Astro</Badge>
         </div>
+        <p class="mt-4 text-xs text-slate-500 dark:text-slate-400">
+          Tip: Use the Login button to choose Student/Admin. Your selection persists in localStorage.
+        </p>
+        <script>
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+              document.getElementById('home-login')?.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('login:open'));
+              });
+            });
+          } else {
+            document.getElementById('home-login')?.addEventListener('click', () => {
+              window.dispatchEvent(new CustomEvent('login:open'));
+            });
+          }
+        </script>
       </Card>
       <section class="card p-0 overflow-hidden anim-scale-in">
         <Welcome />

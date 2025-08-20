@@ -9,25 +9,37 @@ import Badge from '../components/ui/Badge.astro';
 <Layout>
   <section class="section space-y-6">
     <Card title="Student Portal">
-      <p class="mb-4">View routes and register for a bus pass.</p>
-      <form class="grid gap-4 md:grid-cols-3">
-        <FormField label="Student ID" hint="Enter your college ID">
-          <input class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="e.g., STU12345" />
-        </FormField>
-        <FormField label="Preferred Route">
-          <select class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
-            <option>Main Campus Loop</option>
-            <option>North Line</option>
-            <option>South Express</option>
-          </select>
-        </FormField>
-        <FormField label="Travel Date">
-          <input type="date" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
-        </FormField>
-        <div class="md:col-span-3">
-          <button class="btn btn-primary">Register Pass</button>
+      <div id="student-content">
+        <p class="mb-4">View routes and register for a bus pass.</p>
+        <div id="student-gate" class="hidden">
+          <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+            You are not logged in as Student. Please login to access the student portal.
+          </p>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary" id="open-login">Login</button>
+            <a class="btn" href="/admin">Go to Admin</a>
+          </div>
         </div>
-      </form>
+
+        <form id="student-form" class="grid gap-4 md:grid-cols-3">
+          <FormField label="Student ID" hint="Enter your college ID">
+            <input class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="e.g., STU12345" />
+          </FormField>
+          <FormField label="Preferred Route">
+            <select class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+              <option>Main Campus Loop</option>
+              <option>North Line</option>
+              <option>South Express</option>
+            </select>
+          </FormField>
+          <FormField label="Travel Date">
+            <input type="date" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+          </FormField>
+          <div class="md:col-span-3">
+            <button type="button" class="btn btn-primary" id="register-btn">Register Pass</button>
+          </div>
+        </form>
+      </div>
     </Card>
 
     <Card title="Available Routes">
@@ -47,4 +59,34 @@ import Badge from '../components/ui/Badge.astro';
       </Table>
     </Card>
   </section>
+
+  <script>
+    import { getRole, subscribe } from "../lib/store/auth.ts";
+
+    function updateGate(role) {
+      const gate = document.getElementById('student-gate');
+      const form = document.getElementById('student-form');
+      if (!gate || !form) return;
+      const allowed = role === 'student';
+      gate.classList.toggle('hidden', allowed);
+      form.classList.toggle('hidden', !allowed);
+    }
+
+    function init() {
+      updateGate(getRole());
+      subscribe(updateGate);
+      document.getElementById('open-login')?.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('login:open'));
+      });
+      document.getElementById('register-btn')?.addEventListener('click', () => {
+        alert('Pass registered (demo).');
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
 </Layout>
