@@ -1,0 +1,149 @@
+---
+/**
+ * RouteDetail.astro
+ * PUBLIC_INTERFACE
+ * Displays a single route detail with schedule/bus selection, seat availability and hooks for booking.
+ * Props:
+ *  - routeId: string
+ */
+import Badge from "../ui/Badge.astro";
+import Card from "../ui/Card.astro";
+import { getEnvelope, getById, getBusOccupancy } from "../../lib/services";
+import type { ID, Route, Bus, Schedule, Seat } from "../../lib/types";
+
+interface Props { routeId: ID }
+const { routeId } = Astro.props as Props;
+
+const env = getEnvelope();
+const route = getById("route", routeId) as Route | undefined;
+
+if (!route) {
+  throw new Error("Route not found");
+}
+
+// Preload data for rendering; client script will manage dynamic updates
+const routeBuses = env.buses.filter((b) => b.routeId === route.id && b.status === "active");
+const todayIso = new Date().toISOString().slice(0, 10);
+const routeSchedules = env.schedules.filter((s) => s.routeId === route.id && s.serviceDate === todayIso);
+---
+
+<section class="space-y-4">
+  <Card title={`Route: ${route.name}`}>
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      <Badge color="primary">{route.stops.length} stops</Badge>
+      <Badge color="secondary">First: {route.firstBusTime}</Badge>
+      <Badge color="secondary">Last: {route.lastBusTime}</Badge>
+      <Badge color={route.status === "active" ? "accent" : "neutral"}>{route.status}</Badge>
+    </div>
+    <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+      Stops: {route.stops.join(" • ")}
+    </p>
+
+    <div class="grid gap-4 md:grid-cols-3">
+      <div class="md:col-span-1">
+        <h5 class="font-semibold text-slate-800 dark:text-white mb-2">Choose Bus</h5>
+        <select id="bus-select" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+          {routeBuses.map((b) => (
+            <option value={b.id}>{b.code}</option>
+          ))}
+        </select>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Active buses on this route.
+        </p>
+      </div>
+      <div class="md:col-span-1">
+        <h5 class="font-semibold text-slate-800 dark:text-white mb-2">Choose Schedule</h5>
+        <select id="schedule-select" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
+          {routeSchedules.map((s) => (
+            <option value={s.id}>{s.startTime}–{s.endTime} ({s.serviceDate})</option>
+          ))}
+        </select>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          Schedules available for today. Modify in Admin to add more schedules.
+        </p>
+      </div>
+      <div class="md:col-span-1">
+        <h5 class="font-semibold text-slate-800 dark:text-white mb-2">Occupancy</h5>
+        <div id="occupancy-pill" class="text-sm">
+          {/* Filled by script */}
+        </div>
+      </div>
+    </div>
+  </Card>
+
+  <Card title="Seat Selection">
+    <div id="seat-map-mount"></div>
+    <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+      Click an available seat to select it for your booking.
+    </p>
+  </Card>
+
+  <Card title="Register / Book">
+    <div id="booking-form-mount"></div>
+  </Card>
+
+  <script>
+    import type { ID } from "../../lib/types";
+    import { getEnvelope, getBusOccupancy } from "../../lib/services";
+
+    const initialRouteId = {routeId: route.id};
+
+    function byId(id) { return document.getElementById(id); }
+
+    function readState() {
+      const busId = (byId('bus-select') as HTMLSelectElement)?.value || null;
+      const scheduleId = (byId('schedule-select') as HTMLSelectElement)?.value || null;
+      return { busId, scheduleId };
+    }
+
+    function updateOccupancy() {
+      const occ = byId('occupancy-pill');
+      if (!occ) return;
+      const { busId, scheduleId } = readState();
+      if (!busId) { occ.innerHTML = `<span class="text-xs text-slate-500 dark:text-slate-400">Select a bus</span>`; return; }
+      const info = getBusOccupancy(busId, scheduleId || undefined);
+      const occupied = info.capacity - info.available;
+      occ.innerHTML = `
+        <span class="inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs ring-1 ring-black/10 dark:ring-white/10 bg-slate-50 dark:bg-slate-800">
+          <strong>${occupied}</strong> / ${info.capacity} occupied
+        </span>
+      `;
+    }
+
+    function mountSeatMap() {
+      const mount = byId('seat-map-mount');
+      if (!mount) return;
+      const { busId, scheduleId } = readState();
+      mount.innerHTML = `<div data-bus-id="${busId||''}" data-schedule-id="${scheduleId||''}">
+        <seat-map bus-id="${busId||''}" schedule-id="${scheduleId||''}"></seat-map>
+      </div>`;
+      // Dispatch event so SeatMap island can pick state if needed
+      window.dispatchEvent(new CustomEvent('seatmap:mount', { detail: { busId, scheduleId } }));
+    }
+
+    function mountBookingForm() {
+      const mount = byId('booking-form-mount');
+      if (!mount) return;
+      const { busId, scheduleId } = readState();
+      mount.innerHTML = `<pass-registration-form route-id="${initialRouteId.routeId}" bus-id="${busId||''}" schedule-id="${scheduleId||''}"></pass-registration-form>`;
+    }
+
+    function syncAll() {
+      updateOccupancy();
+      mountSeatMap();
+      mountBookingForm();
+    }
+
+    function init() {
+      byId('bus-select')?.addEventListener('change', syncAll);
+      byId('schedule-select')?.addEventListener('change', syncAll);
+      syncAll();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</section>

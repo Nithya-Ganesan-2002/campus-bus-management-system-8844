@@ -1,0 +1,96 @@
+---
+/**
+ * SeatMap.astro
+ * PUBLIC_INTERFACE
+ * Visual seat map for a bus and schedule, allows selecting a seat.
+ * Props:
+ *  - busId: string
+ *  - scheduleId?: string
+ *
+ * Emits:
+ *  - seat:selected { seatId }
+ */
+import Card from "../ui/Card.astro";
+import { getEnvelope } from "../../lib/services";
+import type { ID, Seat } from "../../lib/types";
+
+interface Props { busId: ID; scheduleId?: ID }
+const { busId, scheduleId = "" } = Astro.props as Props;
+
+// Initial server render (static); client script re-renders dynamically
+const env = getEnvelope();
+const initialSeats = env.seats.filter((s) => s.busId === busId);
+---
+
+<div class="space-y-2">
+  <div id="seat-map" class="grid grid-cols-5 gap-2">
+    {initialSeats.map((s) => (
+      <button
+        class={`px-2 py-2 rounded-md text-xs font-semibold ring-1
+          ${s.status === "reserved" ? "bg-slate-200 dark:bg-slate-700 text-slate-500 cursor-not-allowed ring-black/10 dark:ring-white/10" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900 ring-green-400/40"}
+        `}
+        disabled={s.status !== "available" && !(s.status === "reserved" && s.scheduleId !== scheduleId)}
+        data-seat-id={s.id}
+      >
+        {s.number}
+      </button>
+    ))}
+  </div>
+  <div class="text-xs text-slate-500 dark:text-slate-400">
+    Legend: <span class="inline-block rounded px-2 py-1 bg-green-100 text-green-700 mr-1">available</span>
+    <span class="inline-block rounded px-2 py-1 bg-slate-200 text-slate-600">reserved</span>
+  </div>
+</div>
+
+<script>
+  import { getEnvelope } from "../../lib/services";
+
+  function renderSeats(busId, scheduleId) {
+    const container = document.getElementById('seat-map');
+    if (!container) return;
+    const env = getEnvelope();
+    const seats = env.seats.filter((s) => s.busId === busId);
+
+    container.innerHTML = seats.map((s) => {
+      const isAvailable = s.status === 'available' || (s.status === 'reserved' && s.scheduleId !== scheduleId);
+      const cls = isAvailable
+        ? 'px-2 py-2 rounded-md text-xs font-semibold ring-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900 ring-green-400/40'
+        : 'px-2 py-2 rounded-md text-xs font-semibold ring-1 bg-slate-200 dark:bg-slate-700 text-slate-500 cursor-not-allowed ring-black/10 dark:ring-white/10';
+      return `<button class="${cls}" ${isAvailable ? '' : 'disabled'} data-seat-id="${s.id}">${s.number}</button>`;
+    }).join('');
+
+    // Bind events
+    Array.from(container.querySelectorAll('button[data-seat-id]')).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const seatId = btn.getAttribute('data-seat-id');
+        if (!seatId) return;
+        window.dispatchEvent(new CustomEvent('seat:selected', { detail: { seatId } }));
+        // visual feedback
+        container.querySelectorAll('button').forEach((el) => el.classList.remove('ring-2', 'ring-accent'));
+        btn.classList.add('ring-2', 'ring-accent');
+      });
+    });
+  }
+
+  function init() {
+    const el = document.querySelector('seat-map, [data-bus-id]');
+    const busId = (document.querySelector('seat-map') as HTMLElement)?.getAttribute('bus-id')
+      || (document.querySelector('[data-bus-id]') as HTMLElement)?.getAttribute('data-bus-id') || '';
+    const scheduleId = (document.querySelector('seat-map') as HTMLElement)?.getAttribute('schedule-id')
+      || (document.querySelector('[data-schedule-id]') as HTMLElement)?.getAttribute('data-schedule-id') || '';
+    if (!busId) return;
+    renderSeats(busId, scheduleId);
+
+    window.addEventListener('seatmap:mount', (e: CustomEvent) => {
+      if (e?.detail?.busId) {
+        renderSeats(e.detail.busId, e.detail.scheduleId || '');
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

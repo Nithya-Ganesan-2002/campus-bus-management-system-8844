@@ -1,16 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/ui/Card.astro';
-import Table from '../components/ui/Table.astro';
-import FormField from '../components/ui/FormField.astro';
 import Badge from '../components/ui/Badge.astro';
+import { listRoutesActive, getBusOccupancy, getEnvelope } from '../lib/services';
+import { getRole } from '../lib/store/auth';
 ---
 
 <Layout>
   <section class="section space-y-6">
     <Card title="Student Portal">
       <div id="student-content">
-        <p class="mb-4">View routes and register for a bus pass.</p>
+        <p class="mb-4">
+          View routes, check seat availability, and register for a pass. Use the Bus Routes page to explore and book a seat.
+        </p>
         <div id="student-gate" class="hidden">
           <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
             You are not logged in as Student. Please login to access the student portal.
@@ -20,43 +22,47 @@ import Badge from '../components/ui/Badge.astro';
             <a class="btn" href="/admin">Go to Admin</a>
           </div>
         </div>
-
-        <form id="student-form" class="grid gap-4 md:grid-cols-3">
-          <FormField label="Student ID" hint="Enter your college ID">
-            <input class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="e.g., STU12345" />
-          </FormField>
-          <FormField label="Preferred Route">
-            <select class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40">
-              <option>Main Campus Loop</option>
-              <option>North Line</option>
-              <option>South Express</option>
-            </select>
-          </FormField>
-          <FormField label="Travel Date">
-            <input type="date" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
-          </FormField>
-          <div class="md:col-span-3">
-            <button type="button" class="btn btn-primary" id="register-btn">Register Pass</button>
-          </div>
-        </form>
+        <div id="student-actions" class="flex flex-wrap gap-2">
+          <a class="btn btn-primary" href="/routes">Browse Routes & Book</a>
+        </div>
       </div>
     </Card>
 
-    <Card title="Available Routes">
-      <Table headers={["Route", "Timing", "Seats", "Status"]}>
-        <tr>
-          <td class="px-4 py-3">Main Campus Loop</td>
-          <td class="px-4 py-3">08:00 - 18:00</td>
-          <td class="px-4 py-3">12/40</td>
-          <td class="px-4 py-3"><Badge color="accent">Open</Badge></td>
-        </tr>
-        <tr>
-          <td class="px-4 py-3">North Line</td>
-          <td class="px-4 py-3">07:30 - 17:30</td>
-          <td class="px-4 py-3">40/40</td>
-          <td class="px-4 py-3"><Badge>Full</Badge></td>
-        </tr>
-      </Table>
+    <Card title="Quick Glance: Active Routes">
+      {
+        (() => {
+          const routes = listRoutesActive();
+          const env = getEnvelope();
+          const today = new Date().toISOString().slice(0,10);
+          if (!routes.length) return <p class="text-sm text-slate-500 dark:text-slate-400">No active routes.</p>;
+          return (
+            <div class="grid gap-4 md:grid-cols-2">
+              {routes.map((r) => {
+                const buses = env.buses.filter((b) => b.routeId === r.id && b.status === 'active');
+                const sch = env.schedules.find((s) => s.routeId === r.id && s.serviceDate === today);
+                const occ = (buses[0] && sch) ? getBusOccupancy(buses[0].id, sch.id) : null;
+                return (
+                  <div class="p-4 rounded-lg border border-black/5 dark:border-white/10">
+                    <div class="flex items-center justify-between">
+                      <div class="font-semibold">{r.name}</div>
+                      <Badge color="secondary">{buses.length} bus(es)</Badge>
+                    </div>
+                    <div class="text-xs text-slate-600 dark:text-slate-300 mt-1 truncate">Stops: {r.stops.join(', ')}</div>
+                    <div class="mt-2 flex items-center gap-2 text-xs">
+                      <span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">First {r.firstBusTime}</span>
+                      <span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">Last {r.lastBusTime}</span>
+                      {occ ? <span class="px-2 py-1 rounded bg-accent/10 text-accent">{occ.capacity - occ.available}/{occ.capacity}</span> : null}
+                    </div>
+                    <div class="mt-3">
+                      <a class="btn btn-primary !px-3 !py-1.5" href={`/routes?routeId=${encodeURIComponent(r.id)}`}>View & Book</a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()
+      }
     </Card>
   </section>
 
@@ -65,11 +71,11 @@ import Badge from '../components/ui/Badge.astro';
 
     function updateGate(role) {
       const gate = document.getElementById('student-gate');
-      const form = document.getElementById('student-form');
-      if (!gate || !form) return;
+      const actions = document.getElementById('student-actions');
+      if (!gate || !actions) return;
       const allowed = role === 'student';
       gate.classList.toggle('hidden', allowed);
-      form.classList.toggle('hidden', !allowed);
+      actions.classList.toggle('hidden', !allowed);
     }
 
     function init() {
@@ -77,9 +83,6 @@ import Badge from '../components/ui/Badge.astro';
       subscribe(updateGate);
       document.getElementById('open-login')?.addEventListener('click', () => {
         window.dispatchEvent(new CustomEvent('login:open'));
-      });
-      document.getElementById('register-btn')?.addEventListener('click', () => {
-        alert('Pass registered (demo).');
       });
     }
 

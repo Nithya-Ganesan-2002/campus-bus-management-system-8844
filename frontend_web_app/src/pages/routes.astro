@@ -1,29 +1,40 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Card from '../components/ui/Card.astro';
-import Table from '../components/ui/Table.astro';
+import RouteList from '../components/student/RouteList.astro';
+import RouteDetail from '../components/student/RouteDetail.astro';
+import SeatMap from '../components/student/SeatMap.astro';
+import PassRegistrationForm from '../components/student/PassRegistrationForm.astro';
+import { listRoutesActive } from '../lib/services';
 ---
 
 <Layout>
   <section class="section space-y-6">
     <Card title="Bus Routes">
-      <p>Explore all available routes and timings.</p>
+      <p class="text-slate-600 dark:text-slate-300">
+        Explore all available routes and timings. Click a route to view details, seats, and booking options.
+      </p>
     </Card>
-    <Card>
-      <Table headers={["Route", "Stops", "First Bus", "Last Bus"]}>
-        <tr>
-          <td class="px-4 py-3">Main Campus Loop</td>
-          <td class="px-4 py-3">Gate A, Library, Lab Complex, Dorms</td>
-          <td class="px-4 py-3">07:30</td>
-          <td class="px-4 py-3">18:30</td>
-        </tr>
-        <tr>
-          <td class="px-4 py-3">South Express</td>
-          <td class="px-4 py-3">South Gate, Sports Complex</td>
-          <td class="px-4 py-3">07:00</td>
-          <td class="px-4 py-3">19:00</td>
-        </tr>
-      </Table>
-    </Card>
+
+    <div id="routes-view" class="space-y-6">
+      <!-- If a query param ?routeId= is provided, show the detail; else show the list -->
+      {
+        (() => {
+          const url = Astro.url;
+          const routeId = url.searchParams.get('routeId');
+          if (routeId) {
+            return (
+              <>
+                <RouteDetail routeId={routeId} />
+                {/* Hydrate seat map island once for initial state (client script in RouteDetail will refresh as selections change) */}
+                <SeatMap busId="" scheduleId="" />
+                <PassRegistrationForm routeId={routeId} busId="" scheduleId="" />
+              </>
+            );
+          }
+          return <RouteList />;
+        })()
+      }
+    </div>
   </section>
 </Layout>

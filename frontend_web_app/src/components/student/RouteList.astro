@@ -1,0 +1,71 @@
+---
+/**
+ * RouteList.astro
+ * PUBLIC_INTERFACE
+ * Lists active routes with summary and a link/button to view details.
+ * Props:
+ *  - onNavigate?: (path: string) => void (optional client-side navigate handler)
+ */
+import Badge from "../ui/Badge.astro";
+import Card from "../ui/Card.astro";
+import { listRoutesActive, getEnvelope, getBusOccupancy } from "../../lib/services";
+import type { Route, Bus, Schedule } from "../../lib/types";
+
+const routes = listRoutesActive();
+const env = getEnvelope();
+
+// Build a summary data set for each route: buses count, next schedule window
+type RouteSummary = {
+  route: Route;
+  buses: Bus[];
+  schedule?: Schedule;
+  occupancy?: { capacity: number; reserved: number; available: number };
+};
+
+function pickScheduleForRoute(routeId: string): Schedule | undefined {
+  // Pick first schedule for today for route
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return env.schedules.find((s) => s.routeId === routeId && s.serviceDate === todayIso);
+}
+
+const data: RouteSummary[] = routes.map((route) => {
+  const buses = env.buses.filter((b) => b.routeId === route.id && b.status === "active");
+  const schedule = pickScheduleForRoute(route.id);
+  const occupancy = schedule && buses[0] ? getBusOccupancy(buses[0].id, schedule.id) : undefined;
+  return { route, buses, schedule, occupancy };
+});
+---
+
+<section class="space-y-4">
+  {data.map((item) => (
+    <Card>
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="min-w-0">
+          <h4 class="text-base font-semibold text-slate-800 dark:text-white">{item.route.name}</h4>
+          <p class="text-sm text-slate-600 dark:text-slate-300 truncate">
+            Stops: {item.route.stops.join(", ")}
+          </p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            First: {item.route.firstBusTime} • Last: {item.route.lastBusTime}
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <Badge color="primary">{item.buses.length} bus(es)</Badge>
+          {item.schedule ? (
+            <Badge color="secondary">
+              {item.schedule.startTime}–{item.schedule.endTime}
+            </Badge>
+          ) : (
+            <Badge>no schedule</Badge>
+          )}
+          {item.occupancy ? (
+            <Badge color="accent">
+              {item.occupancy.capacity - item.occupancy.available}/{item.occupancy.capacity} occupied
+            </Badge>
+          ) : null}
+          <a class="btn btn-primary !px-3 !py-1.5" href={`/routes?routeId=${encodeURIComponent(item.route.id)}`} data-route-id={item.route.id}>View</a>
+        </div>
+      </div>
+    </Card>
+  ))}
+</section>

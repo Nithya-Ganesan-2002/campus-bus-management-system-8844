@@ -1,0 +1,140 @@
+---
+/**
+ * PassRegistrationForm.astro
+ * PUBLIC_INTERFACE
+ * Booking/registration form for students.
+ * Props:
+ *  - routeId: string
+ *  - busId?: string
+ *  - scheduleId?: string
+ *
+ * Behavior:
+ *  - Listens to 'seat:selected' to capture seatId
+ *  - On submit, validates and calls createBooking() then renders confirmation
+ */
+import FormField from "../ui/FormField.astro";
+import Badge from "../ui/Badge.astro";
+import { createBooking } from "../../lib/services";
+import type { ID } from "../../lib/types";
+
+interface Props { routeId: ID; busId?: ID; scheduleId?: ID }
+const { routeId, busId = "", scheduleId = "" } = Astro.props as Props;
+---
+
+<div id="pass-form" class="grid gap-4 md:grid-cols-3">
+  <FormField label="Student ID" hint="Enter your college ID">
+    <input id="student-id" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" placeholder="e.g., STU12345" />
+  </FormField>
+  <FormField label="Travel Date" hint="Defaults to today if empty">
+    <input id="travel-date" type="date" class="w-full rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-2 outline-none focus:ring-2 focus:ring-secondary/40" />
+  </FormField>
+  <FormField label="Selected Seat">
+    <div id="seat-readout" class="px-3 py-2 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-slate-900 text-sm text-slate-600 dark:text-slate-300">
+      None selected
+    </div>
+  </FormField>
+  <div class="md:col-span-3 flex items-center gap-3">
+    <button id="submit-booking" type="button" class="btn btn-primary">Register / Book</button>
+    <span id="form-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
+  </div>
+</div>
+
+<script>
+  import { createBooking } from "../../lib/services";
+
+  let selectedSeatId = '';
+  let current = {
+    routeId: '{routeId}',
+    busId: '{busId}',
+    scheduleId: '{scheduleId}',
+  };
+
+  function getEl(id) { return document.getElementById(id); }
+
+  function updateSelectedSeat(seatId) {
+    selectedSeatId = seatId || '';
+    const ro = getEl('seat-readout');
+    if (ro) ro.textContent = selectedSeatId ? selectedSeatId : 'None selected';
+  }
+
+  function readTravelDate() {
+    const input = getEl('travel-date');
+    const v = (input as HTMLInputElement)?.value || '';
+    if (v) return v;
+    return new Date().toISOString().slice(0,10);
+  }
+
+  function validate() {
+    const sid = (getEl('student-id') as HTMLInputElement)?.value?.trim();
+    if (!sid) return { ok: false, message: 'Student ID is required' };
+    if (!current.routeId || !current.busId || !current.scheduleId) return { ok: false, message: 'Please select bus and schedule' };
+    return { ok: true, sid };
+  }
+
+  function submit() {
+    const res = validate();
+    const status = getEl('form-status');
+    if (!res.ok) {
+      if (status) status.textContent = res.message;
+      return;
+    }
+    const travelDate = readTravelDate();
+    const booking = createBooking({
+      studentId: res.sid,
+      routeId: current.routeId,
+      busId: current.busId,
+      seatId: selectedSeatId || null,
+      scheduleId: current.scheduleId,
+      travelDate,
+      notes: 'Registered from student portal',
+      status: 'confirmed'
+    });
+    if (status) {
+      status.innerHTML = '';
+    }
+    const wrap = document.getElementById('pass-form');
+    if (!wrap) return;
+    wrap.innerHTML = `
+      <div class="p-4 rounded-lg bg-green-50 dark:bg-green-900/30 ring-1 ring-green-400/30">
+        <div class="text-sm text-green-700 dark:text-green-300">
+          Booking confirmed! ID: <strong>${booking.id}</strong>
+        </div>
+        <div class="text-xs text-slate-600 dark:text-slate-300 mt-2">
+          Route: ${booking.routeId} • Bus: ${booking.busId} • Seat: ${booking.seatId ?? 'N/A'} • Date: ${booking.travelDate}
+        </div>
+      </div>
+    `;
+    // Let seat map refresh externally
+    window.dispatchEvent(new CustomEvent('booking:created', { detail: { booking }}));
+  }
+
+  function init() {
+    // update current props from element attributes (for dynamic re-mounts)
+    const host = document.querySelector('pass-registration-form');
+    if (host) {
+      current.routeId = host.getAttribute('route-id') || current.routeId;
+      current.busId = host.getAttribute('bus-id') || current.busId;
+      current.scheduleId = host.getAttribute('schedule-id') || current.scheduleId;
+    }
+
+    window.addEventListener('seat:selected', (e: CustomEvent) => {
+      updateSelectedSeat(e.detail?.seatId);
+    });
+
+    window.addEventListener('seatmap:mount', (e: CustomEvent) => {
+      // update current selection context
+      current.busId = e.detail?.busId || current.busId;
+      current.scheduleId = e.detail?.scheduleId || current.scheduleId;
+      // clear previous seat selection
+      updateSelectedSeat('');
+    });
+
+    document.getElementById('submit-booking')?.addEventListener('click', submit);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
