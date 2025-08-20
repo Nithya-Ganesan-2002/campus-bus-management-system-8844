@@ -42,7 +42,7 @@ import { getRole } from '../lib/store/auth';
                 const sch = env.schedules.find((s) => s.routeId === r.id && s.serviceDate === today);
                 const occ = (buses[0] && sch) ? getBusOccupancy(buses[0].id, sch.id) : null;
                 return (
-                  <div class="p-4 rounded-lg border border-black/5 dark:border-white/10">
+                  <div class="p-4 rounded-lg border border-black/5 dark:border-white/10 list-item">
                     <div class="flex items-center justify-between">
                       <div class="font-semibold">{r.name}</div>
                       <Badge color="secondary">{buses.length} bus(es)</Badge>

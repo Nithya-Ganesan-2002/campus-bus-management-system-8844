@@ -10,21 +10,21 @@ import PieChart from '../components/charts/PieChart.astro';
   <section class="section">
     <div class="grid gap-6 lg:grid-cols-3">
       <Card title="Daily Occupancy Trend">
-        <LineChart client:idle title="Daily Occupancy Trend" />
+        <LineChart client:only="astro/jsx" title="Daily Occupancy Trend" />
       </Card>
 
       <Card title="Monthly Occupancy">
-        <BarChart client:idle title="Monthly Occupancy" />
+        <BarChart client:only="astro/jsx" title="Monthly Occupancy" />
       </Card>
 
       <Card title="Seat Usage Breakdown">
-        <PieChart client:idle title="Seat Usage Breakdown" />
+        <PieChart client:only="astro/jsx" title="Seat Usage Breakdown" />
       </Card>
     </div>
 
     <div class="mt-6 grid gap-6 md:grid-cols-2">
       <Card title="Bookings (Last 14 Days)">
-        <LineChart client:idle
+        <LineChart client:only="astro/jsx"
           title="Bookings (Last 14 Days)"
           color="#1e40af"
           labels={Array.from({ length: 14 }).map((_, i) => `D-${14 - i}`)}
@@ -32,7 +32,7 @@ import PieChart from '../components/charts/PieChart.astro';
       </Card>
 
       <Card title="Avg. Route Occupancy (%)">
-        <BarChart client:idle
+        <BarChart client:only="astro/jsx"
           title="Avg. Route Occupancy (%)"
           color="#0ea5e9"
           labels={["Main Loop","North Line","South Express"]}

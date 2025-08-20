@@ -39,7 +39,7 @@ const data: RouteSummary[] = routes.map((route) => {
 <section class="space-y-4">
   {data.map((item) => (
     <Card>
-      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="list-item flex flex-col gap-3 md:flex-row md:items-center md:justify-between rounded-lg">
         <div class="min-w-0">
           <h4 class="text-base font-semibold text-slate-800 dark:text-white">{item.route.name}</h4>
           <p class="text-sm text-slate-600 dark:text-slate-300 truncate">

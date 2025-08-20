@@ -9,6 +9,8 @@
  *  - data?: number[]
  *  - color?: string (hex or css color)
  */
+import ClientMount from "./ClientMount.astro";
+
 const {
   title = "Monthly Occupancy",
   labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
@@ -20,9 +22,6 @@ const {
   data?: number[];
   color?: string;
 };
----
----
-import ClientMount from "./ClientMount.astro";
 ---
 <section class="w-full">
   {title && <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{title}</h4>}

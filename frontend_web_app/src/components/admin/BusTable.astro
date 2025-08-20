@@ -58,7 +58,7 @@ const { onAction = "admin:bus:action" } = Astro.props;
         <div class="overflow-x-auto">
           <table class="min-w-full border border-black/5 dark:border-white/10 rounded-lg overflow-hidden">
             <thead class="bg-slate-50 dark:bg-slate-800/60"><tr>${thead}</tr></thead>
-            <tbody class="[&_tr:nth-child(even)]:bg-slate-50/60 dark:[&_tr:nth-child(even)]:bg-slate-800/40">
+            <tbody class="[&_tr]:transition-colors [&_tr:hover]:bg-slate-50/70 dark:[&_tr:hover]:bg-slate-800/50 [&_tr:nth-child(even)]:bg-slate-50/60 dark:[&_tr:nth-child(even)]:bg-slate-800/40">
               ${rows || `<tr><td class="px-4 py-4 text-sm text-slate-500 dark:text-slate-400" colspan="6">No buses.</td></tr>`}
             </tbody>
           </table>

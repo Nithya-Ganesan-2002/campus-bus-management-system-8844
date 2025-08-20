@@ -46,8 +46,18 @@ const { open = undefined, onCloseBehavior = 'hide' } = Astro.props as {
 
     function closeModal() {
       if (Astro.props?.onCloseBehavior === 'noop') return;
-      isOpen = false;
-      render();
+      // animate out before unmount
+      const root = document.getElementById('login-modal-root');
+      const overlay = root?.querySelector('.modal-overlay');
+      const panel = root?.querySelector('.modal-panel');
+      if (overlay && panel) {
+        overlay.setAttribute('data-state', 'closed');
+        panel.setAttribute('data-state', 'closed');
+        setTimeout(() => { isOpen = false; render(); }, 220);
+      } else {
+        isOpen = false;
+        render();
+      }
     }
 
     function render() {
@@ -60,8 +70,8 @@ const { open = undefined, onCloseBehavior = 'hide' } = Astro.props as {
       root.innerHTML = `
         ${show ? `
           <div class="fixed inset-0 z-50 flex items-center justify-center">
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-            <div class="relative z-10 card w-[90%] max-w-lg p-5">
+            <div class="modal-overlay" data-state="open"></div>
+            <div class="relative z-10 modal-panel w-[90%] max-w-lg" data-state="open">
               <h3 class="text-lg font-semibold mb-3 text-slate-800 dark:text-white">Sign in</h3>
               <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
                 Choose a role to continue. This is mock authentication for demo.

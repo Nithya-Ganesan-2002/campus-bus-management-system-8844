@@ -40,9 +40,7 @@ const scheduleIds = {
   s3: 'schedule-3',
 } as const;
 
-const seatIds = {
-  // We'll generate multiple per bus
-} as const;
+
 
 // Routes
 const routes: Route[] = [

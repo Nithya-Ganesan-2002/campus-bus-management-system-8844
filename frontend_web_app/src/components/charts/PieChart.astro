@@ -9,6 +9,8 @@
  *  - data?: number[]
  *  - colors?: string[]
  */
+import ClientMount from "./ClientMount.astro";
+
 const {
   title = "Seat Usage Breakdown",
   labels = ["Available", "Reserved", "Blocked"],
@@ -20,9 +22,6 @@ const {
   data?: number[];
   colors?: string[];
 };
----
----
-import ClientMount from "./ClientMount.astro";
 ---
 <section class="w-full">
   {title && <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">{title}</h4>}
